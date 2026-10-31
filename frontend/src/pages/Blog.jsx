@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { assets, blog_data, comments_data } from '../assets/assets'
-
+import Loader from '../components/Loader'
 // Turns a date into "2 days ago", "Just now", etc.
 const timeAgo = (date) => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
@@ -163,8 +163,7 @@ const Blog = () => {
             </div>
         </div>
     ) : (
-        <p className='text-center mt-20 text-gray-500'>Loading...</p>
-    )
+        <Loader />)
 }
 
 export default Blog
