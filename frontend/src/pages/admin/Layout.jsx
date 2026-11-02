@@ -1,26 +1,17 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { assets } from '../../assets/assets'
 import Sidebar from '../../components/admin/Sidebar'
-import Login from '../../components/admin/Login'
+import { useAppContext } from '../../context/AppContext'
 
 const Layout = () => {
     const navigate = useNavigate()
-    const [token, setToken] = useState(localStorage.getItem('token'))
-
-    const handleLogin = (newToken) => {
-        localStorage.setItem('token', newToken)
-        setToken(newToken)
-    }
+    const { setToken } = useAppContext()
 
     const logout = () => {
         localStorage.removeItem('token')
         setToken(null)
         navigate('/')
-    }
-
-    if (!token) {
-        return <Login onLogin={handleLogin} />
     }
 
     return (

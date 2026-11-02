@@ -1,22 +1,28 @@
 import React, { useState } from 'react'
+import toast from 'react-hot-toast'
+import { useAppContext } from '../../context/AppContext'
 
-const Login = ({ onLogin }) => {
+const Login = () => {
+    const { axios, setToken } = useAppContext()
+
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        // later: send { email, password } to your backend and get a token back
-        // const res = await fetch('http://localhost:3000/api/admin/login', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ email, password }),
-        // })
-        // const data = await res.json()
-        // if (!data.success) return alert(data.message)
-        // onLogin(data.token)
+        try {
+            const { data } = await axios.post('/api/admin/login', { email, password })
 
-        onLogin('demo-token')   // temporary: accepts any email and password
+            if (data.success) {
+                localStorage.setItem('token', data.token)
+                setToken(data.token)
+                toast.success('Logged in')
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
     return (
