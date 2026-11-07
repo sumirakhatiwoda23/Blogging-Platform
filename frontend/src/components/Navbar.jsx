@@ -5,12 +5,18 @@ import { useAppContext } from '../context/AppContext'
 
 const Navbar = () => {
     const navigate = useNavigate()
-    const { token } = useAppContext()
+    const { token, setInput } = useAppContext()
+
+    const goHome = () => {
+        setInput('')
+        navigate('/')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
 
     return (
         <div className='flex justify-between items-center py-5 mx-8 sm:mx-20 xl:mx-32'>
             <img
-                onClick={() => navigate('/')}
+                onClick={goHome}
                 src={assets.logo}
                 alt="logo"
                 className='w-32 sm:w-44 cursor-pointer'

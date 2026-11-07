@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react'
-import { comments_data } from '../../assets/assets'
+import toast from 'react-hot-toast'
 import CommentTableItem from '../../components/admin/CommentTableItem'
+import { useAppContext } from '../../context/AppContext'
 
 const Comments = () => {
+    const { axios } = useAppContext()
     const [comments, setComments] = useState([])
     const [filter, setFilter] = useState('Not Approved')
 
     const fetchComments = async () => {
-        setComments(comments_data)
+        try {
+            const { data } = await axios.get('/api/admin/comments')
+            data.success ? setComments(data.comments) : toast.error(data.message)
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
     useEffect(() => {
@@ -28,7 +35,7 @@ const Comments = () => {
                         <button
                             key={item}
                             onClick={() => setFilter(item)}
-                            className={`shadow-custom-sm border rounded-full px-4 py-1 cursor-pointer text-xs ${
+                            className={`shadow-sm border rounded-full px-4 py-1 cursor-pointer text-xs ${
                                 filter === item ? 'text-primary border-primary' : 'text-gray-700'
                             }`}
                         >

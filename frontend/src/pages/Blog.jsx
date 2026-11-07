@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
-import { assets, blog_data, comments_data } from '../assets/assets'
+import toast from 'react-hot-toast'
+import { assets } from '../assets/assets'
 import Loader from '../components/Loader'
+import { useAppContext } from '../context/AppContext'
+
 // Turns a date into "2 days ago", "Just now", etc.
 const timeAgo = (date) => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
@@ -21,54 +24,75 @@ const timeAgo = (date) => {
 }
 
 const Blog = () => {
-    const {id} = useParams()
+    const { id } = useParams()
+    const { axios } = useAppContext()
 
     const [data, setData] = useState(null)
+    const [notFound, setNotFound] = useState(false)
     const [comments, setComments] = useState([])
 
     const [name, setName] = useState('')
     const [content, setContent] = useState('')
 
-    const fetchBlogData = async ()=>{
-        const data  = blog_data.find(item => item._id === id)
-        setData(data)
+    const fetchBlogData = async () => {
+        try {
+            const res = await axios.get(`/api/blog/${id}`)
+            if (res.data.success) {
+                setData(res.data.blog)
+            } else {
+                setNotFound(true)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
-    const fetchComments = async ()=>{
-        setComments(comments_data.filter(item => item.blog._id === id))
+    const fetchComments = async () => {
+        try {
+            const res = await axios.post('/api/blog/comments', { blogId: id })
+            if (res.data.success) setComments(res.data.comments)
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         fetchBlogData()
         fetchComments()
-    }, [])
+    }, [id])
 
-    const addComment = (e) => {
+    const addComment = async (e) => {
         e.preventDefault()
-        const newComment = {
-            _id: Date.now().toString(),
-            blog: data,
-            name: name.trim(),
-            content: content.trim(),
-            isApproved: false,
-            createdAt: new Date().toISOString(),
+        try {
+            const res = await axios.post('/api/blog/add-comment', {
+                blog: id,
+                name: name.trim(),
+                content: content.trim(),
+            })
+            if (res.data.success) {
+                toast.success(res.data.message)   // shows after the admin approves it
+                setName('')
+                setContent('')
+            } else {
+                toast.error(res.data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
         }
-        setComments([newComment, ...comments])
-        // later: send { blog: id, name, content } to your backend
-        setName('')
-        setContent('')
+    }
+
+    if (notFound) {
+        return <p className='text-center mt-20 text-gray-500'>Blog not found.</p>
     }
 
     return data ? (
         <div className='relative'>
-            {/* Background gradient */}
             <img
                 src={assets.gradientBackground}
                 alt=''
                 className='absolute -top-50 -z-1 opacity-50'
             />
 
-            {/* Blog header */}
             <div className='text-center mt-20 text-gray-600 mx-8'>
                 <p className='text-primary py-4 font-medium'>
                     Published on{' '}
@@ -90,13 +114,12 @@ const Blog = () => {
             <div className='mx-5 max-w-5xl md:mx-auto my-10 mt-6'>
                 <img src={data.image} alt={data.title} className='rounded-3xl mb-5 w-full' />
 
-                {/* Blog description (HTML) */}
                 <div
                     className='rich-text max-w-3xl mx-auto'
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.description) }}
                 />
 
-                {/* Comments list */}
+                {/* Comments list (approved only) */}
                 <div className='mt-14 mb-10 max-w-3xl mx-auto'>
                     <p className='font-semibold mb-4'>Comments ({comments.length})</p>
 
@@ -151,7 +174,6 @@ const Blog = () => {
                     </form>
                 </div>
 
-                {/* Share buttons */}
                 <div className='my-24 max-w-3xl mx-auto'>
                     <p className='font-semibold my-4'>Share this article on social media</p>
                     <div className='flex'>
@@ -163,7 +185,8 @@ const Blog = () => {
             </div>
         </div>
     ) : (
-        <Loader />)
+        <Loader />
+    )
 }
 
 export default Blog

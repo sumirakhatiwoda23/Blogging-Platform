@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
+import toast from 'react-hot-toast'
 import { assets, blogCategories } from '../../assets/assets'
-
-const API_URL = 'http://localhost:3000'
+import { useAppContext } from '../../context/AppContext'
 
 const AddBlog = () => {
+    const { axios, fetchBlogs } = useAppContext()
+
     const editorRef = useRef(null)
     const quillRef = useRef(null)
 
@@ -25,25 +27,17 @@ const AddBlog = () => {
     }, [])
 
     const generateContent = async () => {
-        if (!title) return alert('Enter a title first')
+        if (!title) return toast.error('Enter a title first')
         try {
             setLoading(true)
-            const res = await fetch(`${API_URL}/api/blog/generate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                },
-                body: JSON.stringify({ title }),
-            })
-            const data = await res.json()
+            const { data } = await axios.post('/api/blog/generate', { title })
             if (data.success) {
                 quillRef.current.root.innerHTML = data.content
             } else {
-                alert(data.message)
+                toast.error(data.message)
             }
         } catch (error) {
-            alert(error.message)
+            toast.error(error.message)
         } finally {
             setLoading(false)
         }
@@ -51,7 +45,12 @@ const AddBlog = () => {
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
-        if (!image) return alert('Please upload a thumbnail')
+        if (!image) return toast.error('Please upload a thumbnail')
+
+        // an empty Quill editor still contains <p><br></p>, so check the plain text
+        if (!quillRef.current.getText().trim()) {
+            return toast.error('Please write the blog description')
+        }
 
         const blog = {
             title,
@@ -67,25 +66,23 @@ const AddBlog = () => {
 
         try {
             setAdding(true)
-            // backend not built yet: this only logs the data
-            console.log('blog:', blog, 'image:', image)
+            const { data } = await axios.post('/api/blog/add', formData)
 
-            // later:
-            // const res = await fetch(`${API_URL}/api/blog/add`, {
-            //     method: 'POST',
-            //     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-            //     body: formData,
-            // })
-            // const data = await res.json()
-            // if (!data.success) return alert(data.message)
-
-            // reset the form
-            setImage(false)
-            setTitle('')
-            setSubTitle('')
-            setCategory('Startup')
-            setIsPublished(false)
-            quillRef.current.root.innerHTML = ''
+            if (data.success) {
+                toast.success(data.message)
+                fetchBlogs()   // refresh the list on the home page
+                // reset the form
+                setImage(false)
+                setTitle('')
+                setSubTitle('')
+                setCategory('Startup')
+                setIsPublished(false)
+                quillRef.current.root.innerHTML = ''
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
         } finally {
             setAdding(false)
         }
@@ -109,8 +106,8 @@ const AddBlog = () => {
                         onChange={(e) => setImage(e.target.files[0])}
                         type='file'
                         id='image'
+                        accept='image/*'
                         hidden
-                        required
                     />
                 </label>
 

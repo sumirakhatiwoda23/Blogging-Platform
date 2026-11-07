@@ -1,12 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { assets } from '../assets/assets'
+import { useAppContext } from '../context/AppContext'
 
-const Header = ({ onSearch }) => {
-    const [input, setInput] = useState('')
+const Header = () => {
+    const { input, setInput } = useAppContext()
+    const [text, setText] = useState(input)
+
+    // when the search is cleared elsewhere (logo, Clear button), clear the box too
+    useEffect(() => {
+        setText(input)
+    }, [input])
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        onSearch?.(input.trim())
+        setInput(text.trim())
     }
 
     return (
@@ -36,8 +43,11 @@ const Header = ({ onSearch }) => {
                 >
                     <input
                         type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        value={text}
+                        onChange={(e) => {
+                            setText(e.target.value)
+                            if (e.target.value.trim() === '') setInput('')   // empty box shows all blogs again
+                        }}
                         placeholder='Search blogs'
                         className='w-full pl-4 outline-none'
                     />

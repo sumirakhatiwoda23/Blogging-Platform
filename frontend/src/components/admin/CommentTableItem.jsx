@@ -1,28 +1,47 @@
 import React from 'react'
+import toast from 'react-hot-toast'
 import { assets } from '../../assets/assets'
+import { useAppContext } from '../../context/AppContext'
 
 const CommentTableItem = ({ comment, fetchComments }) => {
+    const { axios } = useAppContext()
     const { blog, createdAt, _id, name, content, isApproved } = comment
     const commentDate = new Date(createdAt)
 
     const approveComment = async () => {
-        // later: call your backend to approve, then refresh
-        console.log('approve:', _id)
-        fetchComments?.()
+        try {
+            const { data } = await axios.post('/api/admin/approve-comment', { id: _id })
+            if (data.success) {
+                toast.success(data.message)
+                fetchComments()
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
     const deleteComment = async () => {
         if (!window.confirm('Delete this comment?')) return
-        // later: call your backend to delete, then refresh
-        console.log('delete:', _id)
-        fetchComments?.()
+        try {
+            const { data } = await axios.post('/api/admin/delete-comment', { id: _id })
+            if (data.success) {
+                toast.success(data.message)
+                fetchComments()
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
     return (
         <tr className='border-y border-gray-300'>
             <td className='px-6 py-4'>
                 <p>
-                    <b className='font-medium text-gray-600'>Blog</b> : {blog.title}
+                    <b className='font-medium text-gray-600'>Blog</b> : {blog?.title || 'Deleted blog'}
                 </p>
                 <p className='mt-2'>
                     <b className='font-medium text-gray-600'>Name</b> : {name}

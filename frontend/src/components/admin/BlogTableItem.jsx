@@ -1,21 +1,42 @@
 import React from 'react'
+import toast from 'react-hot-toast'
 import { assets } from '../../assets/assets'
+import { useAppContext } from '../../context/AppContext'
 
 const BlogTableItem = ({ blog, index, fetchBlogs }) => {
+    const { axios, fetchBlogs: refreshPublicBlogs } = useAppContext()
     const { title, createdAt, isPublished } = blog
     const blogDate = new Date(createdAt)
 
     const togglePublish = async () => {
-        // later: call your backend to flip isPublished, then refresh
-        console.log('toggle publish:', blog._id)
-        fetchBlogs?.()
+        try {
+            const { data } = await axios.post('/api/blog/toggle-publish', { id: blog._id })
+            if (data.success) {
+                toast.success(data.message)
+                await fetchBlogs()
+                refreshPublicBlogs()   // keep the home page list in sync
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
     const deleteBlog = async () => {
         if (!window.confirm('Delete this blog?')) return
-        // later: call your backend to delete, then refresh
-        console.log('delete:', blog._id)
-        fetchBlogs?.()
+        try {
+            const { data } = await axios.post('/api/blog/delete', { id: blog._id })
+            if (data.success) {
+                toast.success(data.message)
+                await fetchBlogs()
+                refreshPublicBlogs()
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
     }
 
     return (
